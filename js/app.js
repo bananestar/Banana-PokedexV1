@@ -15,7 +15,15 @@ const bodyEl = document.getElementById("events");
 const displayResult = document.getElementById("displayResult");
 const formQuery = document.forms["formQuery"];
 
+const pokedexEl = document.getElementById("pokedex");
+const statsEl = document.getElementById("stats");
+
+const typePK = []
+
 let section = 0;
+
+let nbTypePK = 0;
+let nbPK = 0;
 
 btnNextEl.style.display = "none";
 btnPreviousEl.style.display = "none";
@@ -36,6 +44,18 @@ document.addEventListener("DOMContentLoaded", function () {
     section -= 20;
     sendRequestPokemon(section);
   });
+
+  //! Display type and total PK
+  if (nbTypePK === 0 && nbPK === 0) {
+    const titleTypeEl = document.createElement("h6");
+    const titleTotalEl = document.createElement("h6");
+
+    titleTypeEl.textContent = "Nombre de type de pokemon: " + nbTypePK;
+    titleTotalEl.textContent = "Nombre total de pokemon: " + nbPK;
+
+    statsEl.appendChild(titleTypeEl);
+    statsEl.appendChild(titleTotalEl);
+  }
 });
 
 //! Add Event to element list
@@ -46,7 +66,19 @@ bodyEl.addEventListener("click", function (e) {
   }
 });
 
-//! Add Event Form
+//! Add Event to *****************************************
+displayResult.addEventListener("click", function (e) {
+  // console.log(e.target);
+  if (e.target && e.target.id == "pokemonData") {
+    // console.log(e.target.getAttribute('data'));
+    printDesc(e.target.getAttribute("data"));
+  }
+  if (e.target && e.target.id == "descrp") {
+    sendProcesse();
+  }
+});
+
+//! Add Event Form Search
 formQuery.addEventListener("submit", (event) => {
   const InputnamePK = formQuery["namePK"];
   const namePK = InputnamePK.value;
@@ -124,6 +156,27 @@ const sendRequestData = async (pokemon) => {
   }
 };
 
+//! Request Pokedex
+const sendProcesse = async () => {
+  const divForm = document.getElementById("displayFormDesc");
+  const pokemon = document.getElementById("descPK");
+
+  // console.log(pokemon);
+  // console.log(pokemon.getAttribute('data'));
+  // console.log(pokemon.value);
+
+  const url = URL_BASE_DATA.replace("_name_", pokemon.getAttribute("data"));
+  try {
+    const data = await sendGetRequest(url);
+    // console.log(data);
+    printPokedex(data, pokemon.value);
+    divForm.textContent = "";
+  } catch (error) {
+    console.log(error);
+    divForm.textContent = "ERROR";
+  }
+};
+
 //! Display List
 const displayPK = (pokemon) => {
   bodyEl.textContent = "";
@@ -173,6 +226,8 @@ const printPokemon = (pokemon) => {
 
   const titleEl = document.createElement("h4");
   const imgEl = document.createElement("img");
+  const btnAdd = document.createElement("button");
+  const divEl = document.createElement("div");
 
   displayResult.textContent = "";
 
@@ -197,4 +252,110 @@ const printPokemon = (pokemon) => {
 
     displayResult.appendChild(pEl);
   }
+
+  btnAdd.classList.add("btn", "btn-success");
+  btnAdd.setAttribute("id", "pokemonData");
+  btnAdd.setAttribute("data", pokemon.name);
+  btnAdd.textContent = "add";
+
+  displayResult.appendChild(btnAdd);
+
+  divEl.setAttribute("id", "displayFormDesc");
+
+  displayResult.appendChild(divEl);
+};
+
+//! Display TextArea for Disc
+const printDesc = (pokemon) => {
+  // console.log(pokemon);
+
+  const divForm = document.getElementById("displayFormDesc");
+  divForm.textContent = "";
+
+  const formEl = document.createElement("div");
+  const divEl = document.createElement("div");
+  const labelEl = document.createElement("label");
+  const textAreaEl = document.createElement("textarea");
+  const btnConfirmEl = document.createElement("button");
+
+  formEl.classList.add("mt-4");
+
+  divEl.classList.add("form-group");
+
+  labelEl.setAttribute("for", "descPK");
+  labelEl.textContent = "Description";
+
+  textAreaEl.classList.add("form-control");
+  textAreaEl.setAttribute("id", "descPK");
+  textAreaEl.setAttribute("data", pokemon);
+  textAreaEl.placeholder = "description for pokemon";
+  textAreaEl.required = true;
+
+  btnConfirmEl.classList.add("btn", "btn-danger");
+  btnConfirmEl.setAttribute("id", "descrp");
+  btnConfirmEl.textContent = "confirm Add";
+
+  labelEl.appendChild(textAreaEl);
+  divEl.appendChild(labelEl);
+  formEl.appendChild(divEl);
+  formEl.appendChild(btnConfirmEl);
+  divForm.appendChild(formEl);
+};
+
+//! Display Pokedex
+const printPokedex = (pokemon, desc) => {
+  console.log(pokemon);
+  console.log(desc);
+
+  for (let i = 0; i < pokemon.types.length; i++) {
+    // console.log(pokemon.types.length);
+    let type = pokemon.types[i].type.name
+    
+    if (typePK.includes(type)) {
+      console.log('le type est deja include '+type);
+      console.table(typePK);
+    }else{
+      typePK.push(type)
+      nbTypePK++
+      console.log('le type n\'est pas include '+type);
+    }
+  }
+  console.table(typePK);
+  nbPK++
+
+
+  const articleEl = document.createElement('article')
+  articleEl.classList.add('ml-4')
+  articleEl.id = pokemon.name + nbPK
+
+  const divEl = document.createElement('div')
+  
+  const titleEl = document.createElement('h5')
+  titleEl.textContent = 'n°: '+nbPK+' '+pokemon.name
+
+  const imgEl = document.createElement('img')
+  imgEl.src = pokemon.sprites.front_default;
+  imgEl.classList.add("img-thumbnail");
+
+  const descTitleEl = document.createElement('h6')
+  const descEl = document.createElement('p')
+  descEl.textContent = desc
+
+  divEl.appendChild(titleEl)
+  divEl.appendChild(imgEl)
+  divEl.appendChild(descTitleEl)
+  divEl.appendChild(descEl)
+  articleEl.appendChild(divEl)
+  pokedexEl.appendChild(articleEl)
+
+  statsEl.textContent = ''
+
+  const titleTypeEl = document.createElement("h6");
+  const titleTotalEl = document.createElement("h6");
+
+  titleTypeEl.textContent = "Nombre de type de pokemon: " + nbTypePK;
+  titleTotalEl.textContent = "Nombre total de pokemon: " + nbPK;
+
+  statsEl.appendChild(titleTypeEl);
+  statsEl.appendChild(titleTotalEl);
 };
